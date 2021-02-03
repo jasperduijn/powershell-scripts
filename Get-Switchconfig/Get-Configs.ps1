@@ -1,38 +1,32 @@
 <#
     .SYNOPSIS
-        Script to download configs of network devices over SSH using a TFTP server
-    .DESCRIPTION
-        Gather network device configuration with TFTP over SSH.
-            1. Validate the given config files path
-            2. Take input for process names to kill, name of program, destination, and excluded items to not search for or download
+        Script to perform actions on SSH Enabled devices. Defaults to networkconfiguration gathering.
 
-    .PARAMETER Path
-        Accepts a single Json file in array format
-    .PARAMETER Name
-        Name of the Program you wish to find in the Json File
-    .PARAMETER Process
-        Process name that you are going to kill
-    .PARAMETER Destination
-        Destination that you wish to download the files to
-    .PARAMETER ExcludedItems
-        Exclusion list for to keep from copying the listed files or folders or directories
-    .PARAMETER LogPath
-        Path of the logfile you want it to log to. Default is C:\Temp.
-    .PARAMETER Clean
-        Switch to forcfully clean the downloaded files, even if there was an error during install
+    .DESCRIPTION
+        Version: 2.0 - Pre-release 
+        Script to gather network device configurations
+            1. Check if the required Posh-SSH module is installed
+            2. Select CSV file containing the IP's, hostnames, brands and credential selector
+            3. Start TFTP server
+            4. Connects to network devices
+            5. Sends command to upload the configuration to the TFTP server
+            6. Check if configuration is received
+            7. Move configurations to directories
+                a) HOSTNAME\$Filenamestructure -- containing all versions of the device. (If run multiple times on same day, only latest version is saved.)
+                b) yymmdd running-configs\$Filenamestructure -- containing latest versions of that day
+            8. Disconnect form SSH
+            9. Stop TFTP server
+
     .INPUTS
-        Json and String based items
+        None. You currently cannot pipe objects to this script.
     .OUTPUTS
-        Description of objects that are output by the script.
+        Logging output.
     .EXAMPLE
-        Install-SoftwareTemplate -Path \\Server\Path\Here\Json.Json
-    .EXAMPLE
-        Install-SoftwareTemplate -Path \\Server\Path\Here\Json.Json -Name FakeProgramListed
-    .LINK
-        https://github.com/jasperduijn/powershell-scripts/blob/master/Get-Switchconfig/README.md
+        Run this script which will kick off Invoke-DeviceBackup
     .NOTES
-        None
+        Work in progress
 #>
+
 
 #Optional parameters
 # {0} = hostname
@@ -76,8 +70,27 @@ try {
 
 $defaultcredentials = Get-Credential -Message "Enter de default credentials for the networkdevices"
 
-Function LogWrite
-{
+Function LogWrite {
+<#
+    .SYNOPSIS
+        Function to standardize logging
+    .DESCRIPTION
+        Function to write the given input as console text and to a log file. If the logfile variable "$LogFile" isn't set it will default to: "$pwd/$(get-date -format 'yyMMdd') script.log"
+
+    .PARAMETER Position 0
+        Accepts a string that may be piped.
+    .PARAMETER Position 1
+        Color of the text in the console output. Valid options are:
+        Black, Blue, Cyan, DarkBlue, DarkCyan, DarkGray, DarkGreen, DarkMagenta, DarkRed, DarkYellow, Gray, Green, Magenta, Red, White, Yellow
+        Defaults to White
+    .OUTPUTS
+        Text in the console in the specified colour. Parallel in the logfile specified in the $LogFile variable
+    .EXAMPLE
+        LogWrite "Panic, something went wrong!" Red
+    .NOTES
+        None
+#>
+
     Param(
         [Parameter(Mandatory=$true, ValueFromPipeLine=$true, ValueFromPipeLineByPropertyName=$true, Position=0)] [String]$logstring, 
         [Parameter(Mandatory=$false, Position=1)] [ValidateSet("Black","Blue","Cyan","DarkBlue","DarkCyan","DarkGray","DarkGreen","DarkMagenta","DarkRed","DarkYellow","Gray","Green","Magenta","Red","White","Yellow")] [String]$Color = "White"
@@ -87,11 +100,29 @@ Function LogWrite
     Add-content $Logfile -value ("{0} - {1}" -f (Get-Date), $logstring)
 }
 
-Function Start-TFTPDserver
-{
+Function Start-TFTPDserver {
+<#
+    .SYNOPSIS
+        Function to start the TFTP server
+    .DESCRIPTION
+        Function to start the TFTP server after checking if the config file exists. The default config doesn't suit the needs of this script.
+        The config file needs to be in the path from which the script is executed: $PWD\OpenTFTPServerMT.ini.
+
+        If the config exists the TFTP server will start minimized.
+
+        If an error occurs the script will stop.
+
+    .OUTPUTS
+        Open process runnning the TFP server.
+        Log output.
+#>
+
     try { 
-        # Is al actief check
-        if (-Not(Test-Path "$PWD\OpenTFTPServerMT.ini")) { LogWrite "GENERAL ERROR: TFTP server INI doesn't exist" Red; throw ".INI file doesn't exist" }
+        # ToDo: Is al actief check
+        if (-Not(Test-Path "$PWD\OpenTFTPServerMT.ini")) { 
+            LogWrite "GENERAL ERROR: TFTP server INI doesn't exist in $PWD\OpenTFTPServerMT.ini" Red
+            throw ".INI file doesn't exist" 
+        }
         Start-Process -WorkingDirectory $pwd -WindowStyle Minimized "$PWD\OpenTFTPServerMT" "-v"
         LogWrite "GENERAL INFO: TFTP server started"
     } catch {
@@ -101,6 +132,14 @@ Function Start-TFTPDserver
 }
 
 function Stop-TFTPDserver {
+    <#
+    .SYNOPSIS
+        Function to stop the TFTP server
+    .DESCRIPTION
+        Function to check if the TFTP server is running. If it is, then stop it.
+    .OUTPUTS
+        Log output
+#>
     try {
         $process = Get-Process -Name "OpenTFTPServerMT" 
         $process | Stop-Process -Force 
@@ -111,6 +150,22 @@ function Stop-TFTPDserver {
 }
 
 function Connect-SSHDevice {
+<#
+    .SYNOPSIS
+        Function to establish SSH connection to the SSH Enabled device.
+    .DESCRIPTION
+        Function to establish an SSH connection to the device with the given credentials. After the connection is established an "ENTER" is send to the device to continue the first action
+    .PARAMETER IP
+        Mandatory parameter containing the IP of the device as string.
+    .PARAMETER credentials
+        Mandatory parameter containing the SSH credentials of the networkdevice.
+    .OUTPUTS
+        The parameters $SSHSession and $SSHStream
+    .EXAMPLE
+        Connect-SSHDevice -IP "127.0.0.1" -Credentials (Get-Credentials)
+    .NOTES
+        None
+#>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
