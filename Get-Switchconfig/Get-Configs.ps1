@@ -198,7 +198,7 @@ function Get-RunningConfigs {
         $Filename = $Filenamestructure -f $device.hostname
         $command = (($PredefinedCommands | Where-Object { $_.brand -match $device.brand}).command -f $TFTPserverIP, $Filename)
         $null = Invoke-SSHStreamShellCommand -ShellStream $SSHStream -Command $command
-        $null = Get-SSHSession | Remove-SSHSession # SSH Sessie sluiten
+        $null = Get-SSHSession | Remove-SSHSession # Close session and hide output
 
         try {
             $Timeout = 10
