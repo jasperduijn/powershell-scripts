@@ -1,4 +1,4 @@
-# Configuratie copy script op basis van Powershell
+# Configuratie copy script op basis van Powershell en TFTP
 ## Instellen:
 Moet nog uitwerkt worden
 ## Gebruiken:
