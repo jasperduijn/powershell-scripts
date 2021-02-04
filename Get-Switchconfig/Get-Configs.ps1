@@ -22,7 +22,7 @@
     .OUTPUTS
         Logging output.
     .EXAMPLE
-        Run this script which will kick off Invoke-DeviceBackup
+        Run this script which will kick off Invoke-DeviceBackup (last lines in script)
     .NOTES
         Work in progress
 #>
