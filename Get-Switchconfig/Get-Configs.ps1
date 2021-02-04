@@ -224,6 +224,24 @@ function Get-RunningConfigs {
 }
 
 Function Send-CustomSSHCommand {
+<#
+    .SYNOPSIS
+        
+    .DESCRIPTION
+        
+    .PARAMETER device
+        
+    .PARAMETER command
+        
+    .INPUTS
+
+    .OUTPUTS
+        
+    .EXAMPLE
+        
+    .NOTES
+        None
+#>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
@@ -233,6 +251,24 @@ Function Send-CustomSSHCommand {
 }
 
 Function Invoke-DeviceBackup  {
+<#
+    .SYNOPSIS
+        
+    .DESCRIPTION
+        
+    .PARAMETER device
+        
+    .PARAMETER command
+        
+    .INPUTS
+
+    .OUTPUTS
+        
+    .EXAMPLE
+        
+    .NOTES
+        None
+#>
     Param(
         [Parameter(Mandatory=$false, ValueFromPipeLine=$true, ValueFromPipeLineByPropertyName=$true,Position=0)]
             [ValidateNotNullorEmpty()]
