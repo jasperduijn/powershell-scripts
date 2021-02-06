@@ -226,12 +226,12 @@ function Get-RunningConfigs {
 Function Send-CustomSSHCommand {
 <#
     .SYNOPSIS
-        
+        Function to send a custom SSH command to the devices in the import file.
     .DESCRIPTION
+        Work in progress
+    .PARAMETER 
         
-    .PARAMETER device
-        
-    .PARAMETER command
+    .PARAMETER 
         
     .INPUTS
 
@@ -253,21 +253,28 @@ Function Send-CustomSSHCommand {
 Function Invoke-DeviceBackup  {
 <#
     .SYNOPSIS
-        
+        Function that kicks-off the script. Either to back-up or send a custom using the other functions in this script.
     .DESCRIPTION
-        
-    .PARAMETER device
-        
-    .PARAMETER command
-        
+        Function that imports the CSV file with devices and their settings. Sets up the connection invokes the custom command or the back-up commands
+    .PARAMETER Path
+        Optional parameter to path to CSV file containing information about the devices that need to be back-up. If not set a file selector will pop-up.
+    .PARAMETER Delimiter
+        Optional parameter to specify the delimiter character of the CSV file. Needs a string as input
+        Defaults to ";"
     .INPUTS
-
+        CSV file with the following headers:
+        IP;Hostname;Brand;defaultcredentials
+        10.1.10.30;SAMPLE-SW01;Aruba;True
     .OUTPUTS
-        
+        Logging
     .EXAMPLE
-        
+        Invoke-DeviceBackup
+    .EXAMPLE
+        Invoke-DeviceBackup -Path C:\Temp\switches.csv
+    .EXAMPLE
+        Invoke-DeviceBackup -Path C:\Temp\switches.csv -Delimiter ","
     .NOTES
-        None
+        Function name 
 #>
     Param(
         [Parameter(Mandatory=$false, ValueFromPipeLine=$true, ValueFromPipeLineByPropertyName=$true,Position=0)]
