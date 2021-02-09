@@ -351,12 +351,8 @@ Function Invoke-DeviceBackup  {
             $_.defaultcredentials = $true
         }
     }
-    try { 
-        Start-TFTPDserver -ErrorAction Stop
-    } catch {
-        LogWrite "GENERAL ERROR: error starting TFTP server $_" Red
-        exit
-    }
+    
+    Start-TFTPDserver
 
     foreach ($device in $devices) {
         if ($device.defaultcredentials) { $devicecredentials = $defaultcredentials } else { $devicecredentials = Get-Credential -Message "Enter credentials for $($device.hostname)"}
