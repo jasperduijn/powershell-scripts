@@ -14,7 +14,7 @@
             7. Move configurations to directories
                 a) HOSTNAME\$Filenamestructure -- containing all versions of the device. (If run multiple times on same day, only latest version is saved.)
                 b) yymmdd running-configs\$Filenamestructure -- containing latest versions of that day
-            8. Disconnect form SSH
+            8. Disconnect from SSH
             9. Stop TFTP server
 
     .INPUTS
@@ -43,32 +43,53 @@ $TFTPserverIP = (Resolve-DnsName -Name $env:computername -Type A).IPAddress #Get
 ###############################################
 ## Do not change below this line
 ###############################################
-try {
-    Import-Module Posh-SSH
-} catch {
-    if (!(Get-Module "Posh-SSH")) {
-        Write-Host "Module Posh-SSH not installed"
-        # Self-elevate the script if required
-        if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-            if ([int](Get-CimInstance -Class Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber) -ge 6000) {
-                Write-Host "Not running as administrator. Elevating script to admin"
-                $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
-                Start-Process -FilePath PowerShell.exe -Verb Runas -ArgumentList $CommandLine
-                Exit
+function Invoke-ScriptInitialization { 
+<#
+    .SYNOPSIS
+        Functions that checks ands requirements to run this script 
+    .DESCRIPTION
+        Function that checks if the requiered Posh-SSH module is installed. If not then installs it in an elevated powershell session.
+        Also initialize the GUI module and the default password.
+    .PARAMETER 
+        
+    .INPUTS
+
+    .OUTPUTS
+        Nothing if Posh-SSH module is installed. Else the install steps.
+    .EXAMPLE
+        Invoke-ScriptInitialization
+    .NOTES
+        None
+#>
+
+    try {
+        Import-Module Posh-SSH
+    } catch {
+        if (!(Get-Module "Posh-SSH")) {
+            Write-Host "Module Posh-SSH not installed"
+            # Self-elevate the script if required
+            if (-Not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
+                if ([int](Get-CimInstance -Class Win32_OperatingSystem | Select-Object -ExpandProperty BuildNumber) -ge 6000) {
+                    Write-Host "Not running as administrator. Elevating script to admin"
+                    $CommandLine = "-File `"" + $MyInvocation.MyCommand.Path + "`" " + $MyInvocation.UnboundArguments
+                    Start-Process -FilePath PowerShell.exe -Verb Runas -ArgumentList $CommandLine
+                    Exit
+                }
+            } else {
+                Write-Host "Please wait while downloading and installing Posh-SSH module...."
+                Install-Module Posh-SSH
+                Set-ExecutionPolicy Bypass
+                Import-Module Posh-SSH
             }
-        } else {
-            Write-Host "Please wait while downloading and installing Posh-SSH module...."
-            Install-Module Posh-SSH
-            Set-ExecutionPolicy Bypass
-            Import-Module Posh-SSH
         }
     }
+    
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+    [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
+    
+    $defaultcredentials = Get-Credential -Message "Enter de default credentials for the networkdevices"
+    
 }
-
-[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
-[void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
-
-$defaultcredentials = Get-Credential -Message "Enter de default credentials for the networkdevices"
 
 Function LogWrite {
 <#
@@ -187,6 +208,29 @@ function Connect-SSHDevice {
 }
 
 function Get-RunningConfigs {
+<#
+    .SYNOPSIS
+        Function that collects the config
+    .DESCRIPTION
+        Function that instructs the device to upload its config to the running tftp server
+        And sending the command it checks if the config is received and moves it to a 
+        Sends command to upload the configuration to the TFTP server
+        Check if configuration is received
+        Move configurations to directories
+            a) HOSTNAME\$Filenamestructure -- containing all versions of the device. (If run multiple times on same day, only latest version is saved.)
+            b) yymmdd running-configs\$Filenamestructure -- containing latest versions of that day
+        Disconnect from SSH
+    .PARAMETER device
+        device object containing: hostname, device IP, brand and credential type
+    .INPUTS
+        custom device object with IP;Hostname;Brand;defaultcredentials
+    .OUTPUTS
+        Log output
+    .EXAMPLE
+        Get-RunningConfigs -device $device
+    .NOTES
+        None
+#>
     [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
@@ -328,5 +372,5 @@ Function Invoke-DeviceBackup  {
     Stop-TFTPDserver
 }
 
-
+Invoke-ScriptInitialization
 Invoke-DeviceBackup
