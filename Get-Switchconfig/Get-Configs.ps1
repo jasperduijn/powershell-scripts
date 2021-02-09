@@ -147,7 +147,7 @@ Function Start-TFTPDserver {
         Start-Process -WorkingDirectory $pwd -WindowStyle Minimized "$PWD\OpenTFTPServerMT" "-v"
         LogWrite "GENERAL INFO: TFTP server started"
     } catch {
-        LogWrite "GENERAL ERROR: TFTPserver not started" Red
+        LogWrite "GENERAL ERROR: TFTPserver not started $_" Red
         throw "GENERAL ERROR: TFTPserver not started"
     }
 }
@@ -263,7 +263,7 @@ function Get-RunningConfigs {
         }
         
     } catch {
-        LogWrite "$($device.hostname) ERROR: error sending command" Red
+        LogWrite "$($device.hostname) ERROR: error sending command $_" Red
     }     
 }
 
@@ -354,7 +354,7 @@ Function Invoke-DeviceBackup  {
     try { 
         Start-TFTPDserver -ErrorAction Stop
     } catch {
-        LogWrite "GENERAL ERROR: error starting TFTP server" Red
+        LogWrite "GENERAL ERROR: error starting TFTP server $_" Red
         exit
     }
 
