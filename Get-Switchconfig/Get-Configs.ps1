@@ -195,15 +195,15 @@ function Connect-SSHDevice {
 
         [Parameter(Mandatory=$true, Position=0, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
         [ValidateNotNullOrEmpty()]
-        [PSCredential[]]$credentials
+        [System.Management.Automation.PSCredential]$credentials
     )
     try {
-        $SSHSession = New-SSHSession -ComputerName $device.IP -Credential $devicecredentials -AcceptKey
+        $SSHSession = New-SSHSession -ComputerName $IP -Credential $credentials -AcceptKey
         $SSHStream = New-SSHShellStream -SessionId $SSHSession.SessionId
         $SSHStream.WriteLine("") # Press enter to continue
         return $SSHSession,$SSHStream
     } catch {
-        LogWrite "$($device.hostname) ERROR: Session couldn't be established" Red
+        LogWrite "$($device.hostname) ERROR: Session couldn't be established $_" Red
     }
 }
 
@@ -223,7 +223,7 @@ function Get-RunningConfigs {
     .PARAMETER device
         device object containing: hostname, device IP, brand and credential type
     .INPUTS
-        custom device object with IP;Hostname;Brand;defaultcredentials
+        custom device object
     .OUTPUTS
         Log output
     .EXAMPLE
