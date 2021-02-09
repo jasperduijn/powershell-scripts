@@ -87,7 +87,7 @@ function Invoke-ScriptInitialization {
     [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
     [void] [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") 
     
-    $defaultcredentials = Get-Credential -Message "Enter de default credentials for the networkdevices"
+    $global:defaultcredentials = Get-Credential -Message "Enter de default credentials for the networkdevices"
     
 }
 
@@ -351,11 +351,11 @@ Function Invoke-DeviceBackup  {
             $_.defaultcredentials = $true
         }
     }
-    
+
     Start-TFTPDserver
 
     foreach ($device in $devices) {
-        if ($device.defaultcredentials) { $devicecredentials = $defaultcredentials } else { $devicecredentials = Get-Credential -Message "Enter credentials for $($device.hostname)"}
+        if ($device.defaultcredentials) { $devicecredentials = $global:defaultcredentials } else { $devicecredentials = Get-Credential -Message "Enter credentials for $($device.hostname)"}
         $SSHSession,$SSHStream = Connect-SSHDevice -IP $device.IP -Credentials $devicecredentials
 
         if ($device.Function -eq "backup") {
